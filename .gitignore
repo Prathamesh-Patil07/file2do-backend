@@ -2,8 +2,12 @@
 node_modules/
 
 # Output and logs
-compressed/
-uploads/
+uploads/*
+!uploads/.gitkeep
+
+compressed/*
+!compressed/.gitkeep
+
 *.log
 
 # OS files
