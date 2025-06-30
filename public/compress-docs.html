@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>File2do – Compress Word, Excel, PPT</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="/iconB.png">
+  <style>
+    :root {
+      --main-bg: rgb(237, 244, 255);
+      --card-bg: #fff;
+      --primary: #4CAF50;
+      --primary-dark: #388e3c;
+      --text-light: #666;
+      --border: #ddd;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--main-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .container {
+  background: var(--card-bg);
+  width: 90%;
+  max-width: 580px;
+  margin: 70px auto;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+
+    .upload-area {
+      border: 2px dashed var(--primary);
+      padding: 30px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background 0.3s;
+    }
+
+    .upload-area:hover {
+      background: rgba(76, 175, 80, 0.05);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .info {
+      font-size: 14px;
+      color: var(--text-light);
+      text-align: left;
+      margin-bottom: 12px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 10px 0;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    #compressionValue {
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    .result {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .download-btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: var(--primary);
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+  </style>
+
+    <!-- Load dynamic header -->
+  <script>
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('/header.html')
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById('header-placeholder').innerHTML = data;
+
+      const hamburger = document.querySelector('.hamburger');
+      const mobileMenu = document.getElementById('mobileMenu');
+
+      if (hamburger && mobileMenu) {
+        // Toggle mobile menu
+        hamburger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          mobileMenu.classList.toggle('show');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+            mobileMenu.classList.remove('show');
+          }
+        });
+      }
+    });
+});
+</script>
+</head>
+<body>
+  <div id="header-placeholder"></div>
+
+  <div class="container">
+    <h2 style="font-size: 24px; font-weight: 600; color: #222; margin-bottom: 20px;">
+      <i class="#0061ff"></i> Compress Word, PPT, Excel Files
+    </h2>
+
+    <form id="docForm" enctype="multipart/form-data">
+      <label for="docFile" class="upload-area">
+        <i class="fa-solid fa-cloud-arrow-up fa-2x"></i><br>
+        Click to upload Word, PPT, or Excel file
+      </label>
+      <input type="file" id="docFile" name="file" accept=".doc,.docx,.ppt,.pptx,.xls,.xlsx" required />
+
+      <div class="info">
+        File: <span id="fileName">–</span><br>
+        Original Size: <span id="originalSize">–</span><br>
+        Estimated Size: <span id="estimatedSize">–</span>
+      </div>
+
+      <label>Compression Level: <span id="compressionValue">60%</span></label>
+      <input type="range" name="compression" min="10" max="90" value="60" step="5" oninput="updateCompression(this.value)">
+
+      <button type="submit"><i class="fa-solid fa-compress"></i> Compress Now</button>
+    </form>
+
+    <div id="result" class="result" style="display:none;"></div>
+  </div>
+
+  <section class="bg-gray-100 text-center py-24 px-4 mt-24">
+    <h3 class="text-4xl font-semibold mb-6 text-gray-800">How to Compress Word, Excel, PPT Files?</h3>
+    <p class="text-gray-700 max-w-3xl mx-auto text-base sm:text-lg mb-10">
+      Reduce the size of your Microsoft Office files in seconds with File2do. Here's how:
+    </p>
+
+    <div class="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-left">
+      <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+        <div class="text-green-600 text-2xl mb-2"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <h4 class="font-semibold text-lg mb-2">1. Upload File</h4>
+        <p class="text-gray-600 text-sm">Choose your Word, Excel, or PowerPoint file to upload.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+        <div class="text-blue-600 text-2xl mb-2"><i class="fa-solid fa-sliders"></i></div>
+        <h4 class="font-semibold text-lg mb-2">2. Adjust Compression</h4>
+        <p class="text-gray-600 text-sm">Use the slider to control the compression level.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+        <div class="text-purple-600 text-2xl mb-2"><i class="fa-solid fa-download"></i></div>
+        <h4 class="font-semibold text-lg mb-2">3. Download</h4>
+        <p class="text-gray-600 text-sm">Click 'Compress Now' and download your optimized file.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-white border-t mt-10">
+    <div class="max-w-7xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-base">
+      <div>
+        <h4 class="font-bold mb-3">File2do</h4>
+        <ul class="space-y-2">
+          <li><a href="index.html" class="text-gray-700 hover:text-green-600">Home</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Resources</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Security</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-3">Products</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Desktop</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Mobile</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">API</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-3">Company</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-gray-700 hover:text-green-600">About</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Blog</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Press</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-3">Legal</h4>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Terms</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Privacy</a></li>
+          <li><a href="#" class="text-gray-700 hover:text-green-600">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="text-center py-4 text-xs text-gray-400">
+      &copy; 2025 File2do. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    let currentFileSize = 0;
+
+    document.getElementById('docFile').addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        currentFileSize = file.size;
+        document.getElementById('fileName').innerText = file.name;
+        document.getElementById('originalSize').innerText = formatBytes(file.size);
+        updateEstimatedSize(document.querySelector('input[type="range"]').value);
+      }
+    });
+
+    function updateCompression(val) {
+      document.getElementById('compressionValue').innerText = val + '%';
+      updateEstimatedSize(val);
+    }
+
+    function updateEstimatedSize(compression) {
+      if (currentFileSize > 0) {
+        const quality = 100 - compression;
+        const estimatedSize = currentFileSize * (quality / 100);
+        document.getElementById('estimatedSize').innerText = formatBytes(estimatedSize);
+      }
+    }
+
+    function formatBytes(bytes) {
+      const sizes = ['Bytes', 'KB', 'MB'];
+      if (bytes === 0) return '0 Bytes';
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    document.getElementById('docForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const result = document.getElementById('result');
+      result.style.display = 'block';
+      result.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Compressing...';
+
+      try {
+        const response = await fetch('/compresss-pdf', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        const readableSize = formatBytes(data.size);
+
+        result.innerHTML = `
+          <strong>✅ Compression complete!</strong><br>
+          Compressed Size: <strong>${readableSize}</strong><br>
+          <a class="download-btn" href="${data.downloadUrl}" download>⬇ Download File</a>
+        `;
+      } catch (err) {
+        result.innerHTML = '❌ Compression failed.';
+      }
+    });
+  </script>
+</body>
+</html>

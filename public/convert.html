@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Convert to PDF – File2do</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="icon" type="image/png" href="/iconB.png">
+
+  <style>
+    :root {
+      --main-bg: #eef5ff;
+      --card-bg: #fff;
+      --primary: #4CAF50;
+      --primary-dark: #388e3c;
+      --text-light: #666;
+      --text-dark: #222;
+      --border: #ccc;
+      --blue: #0061ff;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--main-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+   .container {
+  background: var(--card-bg);
+  width: 90%;
+  max-width: 580px;
+  margin: 110px auto;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+
+    h2 {
+      margin-top: 0;
+      color: var(--text-dark);
+    }
+
+    .upload-area {
+      border: 2px dashed var(--primary);
+      padding: 30px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background 0.3s;
+    }
+
+    .upload-area:hover {
+      background: rgba(76, 175, 80, 0.05);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .info {
+      font-size: 14px;
+      color: var(--text-light);
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .info span {
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    .result {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .download-btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: var(--primary);
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+  </style>
+
+    <!-- Load dynamic header -->
+  <script>
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('/header.html')
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById('header-placeholder').innerHTML = data;
+
+      const hamburger = document.querySelector('.hamburger');
+      const mobileMenu = document.getElementById('mobileMenu');
+
+      if (hamburger && mobileMenu) {
+        // Toggle mobile menu
+        hamburger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          mobileMenu.classList.toggle('show');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+            mobileMenu.classList.remove('show');
+          }
+        });
+      }
+    });
+});
+</script>
+</head>
+
+<body>
+  <!-- Toolbar / Header -->
+  <div id="header-placeholder"></div>
+
+  <!-- Main Content -->
+  <div class="container">
+    <h2 style="font-size: 24px; font-weight: 600; color: #222; margin-bottom: 20px;">
+  <i class="#"></i> Convert Word, PPT, Excel to PDF
+</h2>
+    
+
+    <form id="convertForm" enctype="multipart/form-data">
+      <label for="fileInput">
+        <div class="upload-area">
+          <i class="fa-solid fa-cloud-arrow-up fa-2x"></i><br>
+          <strong>Click to upload</strong><br>
+          <small>(DOCX, PPTX, XLSX)</small>
+        </div>
+      </label>
+      <input type="file" id="fileInput" name="file" accept=".doc,.docx,.ppt,.pptx,.xls,.xlsx" required />
+
+      <div class="info">
+        File: <span id="fileName">–</span>
+      </div>
+
+      <button type="submit"><i class="fa-solid fa-file-pdf"></i> Convert to PDF</button>
+    </form>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <!-- Promo: How to Convert Word, PPT, Excel to PDF -->
+<section class="bg-gray-100 text-center py-24 px-4 mt-24">
+  <h3 class="text-4xl font-semibold mb-6 text-gray-800">How to Convert Word, PPT, Excel to PDF?</h3>
+  <p class="text-gray-700 max-w-3xl mx-auto text-base sm:text-lg mb-10">
+    Convert documents from Microsoft Word, PowerPoint, or Excel into professional PDFs with ease.
+  </p>
+
+  <div class="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-left">
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-green-600 text-2xl mb-2"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+      <h4 class="font-semibold text-lg mb-2">1. Upload File</h4>
+      <p class="text-gray-600 text-sm">Choose your DOCX, PPTX, or XLSX file to begin converting.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-blue-600 text-2xl mb-2"><i class="fa-solid fa-arrows-rotate"></i></div>
+      <h4 class="font-semibold text-lg mb-2">2. Convert</h4>
+      <p class="text-gray-600 text-sm">Click "Convert to PDF" and let our engine transform your document.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-purple-600 text-2xl mb-2"><i class="fa-solid fa-download"></i></div>
+      <h4 class="font-semibold text-lg mb-2">3. Download</h4>
+      <p class="text-gray-600 text-sm">Instantly download your new PDF clean, fast, and print ready.</p>
+    </div>
+  </div>
+</section>
+
+
+
+  <footer class="bg-white border-t mt-10">
+  <div class="max-w-7xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-base">
+    <div>
+      <h4 class="font-bold mb-3">File2do</h4>
+      <ul class="space-y-2">
+        <li><a href="index.html" class="text-gray-700 hover:text-green-600">Home</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Resources</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Security</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">FAQ</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Products</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Desktop</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Mobile</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">API</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Company</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">About</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Blog</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Press</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Legal</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Terms</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Privacy</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="text-center py-4 text-xs text-gray-400">
+    &copy; 2025 File2do. All rights reserved.
+  </div>
+</footer>
+
+
+  <script>
+    const form = document.getElementById('convertForm');
+    const result = document.getElementById('result');
+    const fileNameDisplay = document.getElementById('fileName');
+    const fileInput = document.getElementById('fileInput');
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        fileNameDisplay.textContent = file.name;
+      }
+    });
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      result.style.display = 'block';
+      result.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Converting...';
+
+      const formData = new FormData(form);
+      try {
+        const res = await fetch('/convert-to-pdf', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText);
+        }
+
+        const data = await res.json();
+
+        if (data.downloadUrl) {
+          result.innerHTML = `
+            <strong>✅ Conversion complete!</strong><br>
+            <a class="download-btn" href="${data.downloadUrl}" download>
+              <i class="fa-solid fa-download"></i> Download PDF
+            </a>
+          `;
+        } else {
+          result.innerHTML = '❌ No download URL returned.';
+        }
+      } catch (err) {
+        console.error('Conversion Error:', err);
+        result.innerHTML = '❌ Conversion failed.';
+      }
+    });
+  </script>
+</body>
+</html>

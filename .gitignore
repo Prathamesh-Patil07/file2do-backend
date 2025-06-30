@@ -1,0 +1,18 @@
+# Dependency directory
+node_modules/
+
+# Output and logs
+compressed/
+uploads/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (if any)
+.env
+
+# IDE settings
+.vscode/
+.idea/

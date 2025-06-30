@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>File2do – PDF Compressor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="/iconB.png">
+  <style>
+    :root {
+      --main-bg: rgb(237, 244, 255);
+      --card-bg: #fff;
+      --primary: #4CAF50;
+      --primary-dark: #3b8d3b;
+      --border: #ddd;
+      --text-light: #666;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--main-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: var(--card-bg);
+      max-width: 480px;
+      margin: 50px auto;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #222;
+    }
+
+    .upload-area {
+      border: 2px dashed var(--primary);
+      padding: 30px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background 0.3s;
+    }
+
+    .upload-area:hover {
+      background: rgba(76, 175, 80, 0.05);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .info {
+      font-size: 14px;
+      color: var(--text-light);
+      text-align: left;
+      margin-bottom: 12px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 10px 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      background-color: var(--primary);
+      border-radius: 50%;
+      height: 16px;
+      width: 16px;
+      cursor: pointer;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    #compressionValue {
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    .result {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .download-btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: var(--primary);
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+  </style>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      fetch('/header.html')
+        .then(res => res.text())
+        .then(data => {
+          document.getElementById('header-placeholder').innerHTML = data;
+        });
+    });
+  </script>
+</head>
+<body>
+  <div id="header-placeholder"></div>
+
+  <div class="container">
+    <h2><i class="fa-solid fa-file-pdf"></i> Compress Your PDF</h2>
+
+    <form id="pdfForm" enctype="multipart/form-data">
+      <label for="pdfInput" class="upload-area">
+        <i class="fa-solid fa-cloud-arrow-up fa-2x"></i><br>
+        Click to upload PDF file
+      </label>
+      <input type="file" id="pdfInput" name="file" accept=".pdf" required />
+
+      <div class="info">
+        Original Size: <span id="originalSize">–</span><br>
+      </div>
+
+      <label>Compression Level: <span id="compressionValue">60%</span></label>
+      <input type="range" name="compression" min="10" max="90" value="60" step="10"
+             oninput="updateCompression(this.value)" />
+
+      <button type="submit"><i class="fa-solid fa-compress"></i> Compress PDF</button>
+    </form>
+
+    <div id="result" class="result" style="display:none;"></div>
+  </div>
+
+  <footer>
+    &copy; 2025 File2do | Designed with 💚
+  </footer>
+
+  <script>
+    let currentPdfSize = 0;
+
+    document.getElementById('pdfInput').addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        currentPdfSize = file.size;
+        document.getElementById('originalSize').innerText = formatBytes(file.size);
+      }
+    });
+
+    function updateCompression(val) {
+      document.getElementById('compressionValue').innerText = val + '%';
+    }
+
+    function formatBytes(bytes) {
+      const sizes = ['Bytes', 'KB', 'MB'];
+      if (bytes === 0) return '0 Bytes';
+      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+      return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    document.getElementById('pdfForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Compressing...';
+      resultDiv.style.display = 'block';
+
+      try {
+        const res = await fetch('/compress-pdf', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        const compressedSize = formatBytes(data.size);
+        const originalSize = formatBytes(data.originalSize || currentPdfSize);
+
+        resultDiv.innerHTML = `
+          <strong>✅ Compression Complete!</strong><br>
+          Original Size: <strong>${originalSize}</strong><br>
+          Compressed Size: <strong>${compressedSize}</strong><br>
+          <a class="download-btn" href="${data.downloadUrl}" download>Download PDF</a>
+        `;
+      } catch (err) {
+        resultDiv.innerHTML = '❌ Compression failed.';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "file2do-backend",
+  "version": "1.0.0",
+  "description": "Backend for File2Do – PDF, image, video, and document processing tools.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "express": "^5.1.0",
+    "glob": "^11.0.3",
+    "libreoffice-convert": "^1.6.1",
+    "multer": "^2.0.1",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.34.2",
+    "cors": "^2.8.5"
+  }
+}

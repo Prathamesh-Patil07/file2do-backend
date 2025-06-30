@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rotate PDF Pages – File2do</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="icon" type="image/png" href="/iconB.png">
+  <style>
+    :root {
+      --main-bg: #eef5ff;
+      --card-bg: #fff;
+      --primary: #4CAF50;
+      --primary-dark: #388e3c;
+      --text-light: #666;
+      --text-dark: #222;
+      --border: #ccc;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--main-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .container {
+  background: var(--card-bg);
+  width: 90%;
+  max-width: 580px;
+  margin: 110px auto;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+    .upload-area {
+      border: 2px dashed var(--primary);
+      padding: 25px;
+      text-align: center;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .pages {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .page-item {
+      position: relative;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+      width: 150px;
+      overflow: hidden;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .page-item canvas {
+      max-width: 100%;
+      height: auto;
+      max-height: 180px;
+      border-radius: 4px;
+      display: block;
+      margin: 0 auto;
+    }
+    .page-number {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: var(--primary);
+      color: white;
+      padding: 2px 6px;
+      font-size: 12px;
+      border-radius: 4px;
+      z-index: 5;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      cursor: pointer;
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .delete-btn:hover {
+      background-color: #d32f2f;
+      transform: scale(1.1);
+    }
+    .rotate-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .rotate-btn:hover {
+      background-color: #2e7d32;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    button#applyBtn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .result {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .download-btn {
+      background: var(--primary-dark);
+      padding: 10px 20px;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    fetch('/header.html')
+      .then(res => res.text())
+      .then(data => {
+        const header = document.createElement('div');
+        header.innerHTML = data;
+        document.body.insertBefore(header, document.body.firstChild);
+
+        // Delay to ensure header content is loaded into DOM before attaching handlers
+        setTimeout(() => {
+          const hamburger = document.querySelector('.hamburger');
+          const mobileMenu = document.getElementById('mobileMenu');
+
+          if (hamburger && mobileMenu) {
+            // Toggle menu
+            hamburger.addEventListener('click', (e) => {
+              e.stopPropagation();
+              mobileMenu.classList.toggle('show');
+            });
+
+            // Close menu on outside click
+            document.addEventListener('click', (e) => {
+              if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+                mobileMenu.classList.remove('show');
+              }
+            });
+          }
+        }, 100); // slight delay to ensure DOM is updated
+      });
+  });
+</script>
+
+</head>
+<body>
+
+<div class="container">
+  <h2 class="text-2xl font-semibold mb-5 text-center text-gray-800">Rotate or Delete PDF Pages</h2>
+  <div class="upload-area" onclick="document.getElementById('pdfInput').click()">
+    <i class="fa-solid fa-cloud-arrow-up fa-2x"></i><br>
+    <strong>Click to upload your PDF</strong>
+    <input type="file" id="pdfInput" accept="application/pdf" />
+  </div>
+
+  <div class="pages" id="pageContainer"></div>
+  <button id="applyBtn"><i class="fa-solid fa-check"></i> Apply Changes & Download</button>
+  <div class="result" id="result"></div>
+</div>
+
+<!-- How to Rotate or Delete PDF – Promo Styled Section -->
+<section class="bg-gray-100 text-center py-24 px-4 mt-24">
+  <h3 class="text-4xl font-semibold mb-6 text-gray-800">How to Rotate or Delete PDF Pages?</h3>
+  <p class="text-gray-700 max-w-3xl mx-auto text-base sm:text-lg mb-10">
+    Rotating or deleting pages in your PDF is quick and intuitive with File2do. Follow these steps:
+  </p>
+
+  <div class="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-left">
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-green-600 text-2xl mb-2"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+      <h4 class="font-semibold text-lg mb-2">1. Upload PDF</h4>
+      <p class="text-gray-600 text-sm">Click the upload area and select the PDF file you want to edit.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-blue-600 text-2xl mb-2"><i class="fa-solid fa-arrows-rotate"></i></div>
+      <h4 class="font-semibold text-lg mb-2">2. Rotate or Delete</h4>
+      <p class="text-gray-600 text-sm">Use the rotate icon to turn pages or click “×” to delete any page.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-purple-600 text-2xl mb-2"><i class="fa-solid fa-download"></i></div>
+      <h4 class="font-semibold text-lg mb-2">3. Download</h4>
+      <p class="text-gray-600 text-sm">Click "Apply Changes & Download" to get your updated PDF.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-white border-t mt-10">
+  <div class="max-w-7xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-base">
+    <div>
+      <h4 class="font-bold mb-3">File2do</h4>
+      <ul class="space-y-2">
+        <li><a href="index.html" class="text-gray-700 hover:text-green-600">Home</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Tools</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Security</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">FAQ</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">PDF Tools</h4>
+      <ul class="space-y-2">
+        <li><a href="merge.html" class="text-gray-700 hover:text-green-600">Merge PDFs</a></li>
+        <li><a href="compress-docs.html" class="text-gray-700 hover:text-green-600">Compress Docs</a></li>
+        <li><a href="rotate.html" class="text-gray-700 hover:text-green-600">Rotate Pages</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Company</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">About Us</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Blog</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Careers</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Legal</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Terms</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Privacy</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="text-center py-4 text-xs text-gray-400">
+    &copy; 2025 File2do. All rights reserved.
+  </div>
+</footer>
+
+
+<!-- (Promo Section + Footer skipped for brevity — same as your current file) -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+  const pdfInput = document.getElementById('pdfInput');
+  const pageContainer = document.getElementById('pageContainer');
+  const result = document.getElementById('result');
+  const applyBtn = document.getElementById('applyBtn');
+
+  let pages = [];
+  let originalFile = null;
+
+  pdfInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    originalFile = file;
+
+    const reader = new FileReader();
+    reader.onload = async function () {
+      const typedarray = new Uint8Array(reader.result);
+      const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+
+      pages = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 0.4 });
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
+        pages.push({ originalIndex: i - 1, canvas, rotation: 0 });
+      }
+      renderPages();
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  function renderPages() {
+    pageContainer.innerHTML = '';
+    pages.forEach((pg, idx) => {
+      const item = document.createElement('div');
+      item.className = 'page-item';
+
+      const numberTag = document.createElement('div');
+      numberTag.className = 'page-number';
+      numberTag.textContent = `Page ${idx + 1}`;
+      item.appendChild(numberTag);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.innerHTML = '&times;';
+      deleteBtn.onclick = () => {
+        pages.splice(idx, 1);
+        renderPages();
+      };
+      item.appendChild(deleteBtn);
+
+      item.appendChild(pg.canvas);
+
+      const rotateBtn = document.createElement('button');
+      rotateBtn.className = 'rotate-btn';
+      rotateBtn.innerHTML = '<i class="fa fa-rotate-right"></i>';
+      rotateBtn.onclick = () => {
+  pg.rotation = (pg.rotation + 90) % 360;
+  pg.canvas.style.transform = `rotate(${pg.rotation}deg)`;
+};
+
+      item.appendChild(rotateBtn);
+
+      pageContainer.appendChild(item);
+    });
+  }
+
+  function rotateCanvas(pg, idx) {
+    const oldCanvas = pg.canvas;
+    const tempCanvas = document.createElement('canvas');
+    const ctx = tempCanvas.getContext('2d');
+    const angle = pg.rotation;
+    const w = oldCanvas.width;
+    const h = oldCanvas.height;
+
+    if (angle % 180 === 0) {
+      tempCanvas.width = w;
+      tempCanvas.height = h;
+    } else {
+      tempCanvas.width = h;
+      tempCanvas.height = w;
+    }
+
+    ctx.save();
+    ctx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+    ctx.rotate((angle * Math.PI) / 180);
+    ctx.drawImage(oldCanvas, -w / 2, -h / 2);
+    ctx.restore();
+
+    pg.canvas = tempCanvas;
+    const pageItem = pageContainer.children[idx];
+    const oldCanvasElem = pageItem.querySelector('canvas');
+    if (oldCanvasElem) {
+      pageItem.replaceChild(tempCanvas, oldCanvasElem);
+    }
+  }
+
+  applyBtn.addEventListener('click', async () => {
+    if (pages.length === 0 || !originalFile) return;
+
+    const formData = new FormData();
+    formData.append('originalPdf', originalFile);
+    formData.append('actions', JSON.stringify(
+      pages.map(p => ({
+        originalIndex: p.originalIndex,
+        rotation: p.rotation
+      }))
+    ));
+
+    result.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+
+    try {
+      const res = await fetch('/rotate-pdf', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.downloadUrl) {
+        result.innerHTML = `
+          <strong>✅ PDF Processed!</strong><br>
+          <a class="download-btn" href="${data.downloadUrl}" download>
+            <i class="fa-solid fa-download"></i> Download PDF
+          </a>
+        `;
+      } else {
+        result.innerHTML = '❌ Failed to process PDF.';
+      }
+    } catch (err) {
+      result.innerHTML = '❌ An error occurred.';
+      console.error(err);
+    }
+  });
+</script>
+</body>
+</html>

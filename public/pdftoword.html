@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PDF to Word – File2do</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="icon" type="image/png" href="/iconB.png">
+
+  <style>
+    :root {
+      --main-bg: #eef5ff;
+      --card-bg: #fff;
+      --primary: #4CAF50;
+      --primary-dark: #388e3c;
+      --text-light: #666;
+      --text-dark: #222;
+      --border: #ccc;
+      --blue: #0061ff;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--main-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: var(--card-bg);
+      max-width: 580px;
+      width: 50%;
+      margin: 50px auto;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: var(--text-dark);
+    }
+
+    .upload-area {
+      border: 2px dashed var(--primary);
+      padding: 30px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background 0.3s;
+    }
+
+    .upload-area:hover {
+      background: rgba(76, 175, 80, 0.05);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .info {
+      font-size: 14px;
+      color: var(--text-light);
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .info span {
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    .result {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .download-btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: var(--primary);
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+  </style>
+
+   <!-- Load dynamic header -->
+  <script>
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('/header.html')
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById('header-placeholder').innerHTML = data;
+
+      const hamburger = document.querySelector('.hamburger');
+      const mobileMenu = document.getElementById('mobileMenu');
+
+      if (hamburger && mobileMenu) {
+        // Toggle mobile menu
+        hamburger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          mobileMenu.classList.toggle('show');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+            mobileMenu.classList.remove('show');
+          }
+        });
+      }
+    });
+});
+</script>
+</head>
+
+<body>
+  <div id="header-placeholder"></div>
+
+  <div class="container">
+    <h2><i class="fa-solid fa-file-word"></i> Convert PDF to Word</h2>
+
+    <form id="convertForm" enctype="multipart/form-data">
+      <label for="fileInput">
+        <div class="upload-area">
+          <i class="fa-solid fa-cloud-arrow-up fa-2x"></i><br>
+          <strong>Click to upload</strong><br>
+          <small>(PDF only)</small>
+        </div>
+      </label>
+      <input type="file" id="fileInput" name="file" accept=".pdf" required />
+
+      <div class="info">
+        File: <span id="fileName">–</span>
+      </div>
+
+      <button type="submit"><i class="fa-solid fa-file-word"></i> Convert to Word</button>
+    </form>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <footer>
+    &copy; 2025 File2do | Designed with 💚
+  </footer>
+
+  <script>
+    const form = document.getElementById('convertForm');
+    const result = document.getElementById('result');
+    const fileNameDisplay = document.getElementById('fileName');
+    const fileInput = document.getElementById('fileInput');
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        fileNameDisplay.textContent = file.name;
+      }
+    });
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      result.style.display = 'block';
+      result.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Converting...';
+
+      const formData = new FormData(form);
+      try {
+        const res = await fetch('/pdf-to-word', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText);
+        }
+
+        const data = await res.json();
+
+        if (data.downloadUrl) {
+          result.innerHTML = `
+            <strong>✅ Conversion complete!</strong><br>
+            <a class="download-btn" href="${data.downloadUrl}" download>
+              <i class="fa-solid fa-download"></i> Download Word
+            </a>
+          `;
+        } else {
+          result.innerHTML = '❌ No download URL returned.';
+        }
+      } catch (err) {
+        console.error('Conversion Error:', err);
+        result.innerHTML = '❌ Conversion failed.';
+      }
+    });
+  </script>
+</body>
+</html>

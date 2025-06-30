@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Protect PDF – File2do</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="icon" type="image/png" href="/iconB.png">
+  <style>
+    :root {
+      --main-bg: #eef5ff;
+      --card-bg: #fff;
+      --primary: #4CAF50;
+      --primary-dark: #388e3c;
+      --text-light: #666;
+      --text-dark: #222;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--main-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .container {
+  background: var(--card-bg);
+  width: 90%;
+  max-width: 580px;
+  margin: 90px auto;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+
+    .result .download-btn {
+  margin-top: 15px;
+  display: inline-block;
+}
+
+
+    h2 {
+      margin-top: 0;
+      color: var(--text-dark);
+    }
+
+    .upload-area {
+      border: 2px dashed var(--primary);
+      padding: 30px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    input[type="file"],
+    input[type="password"] {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .result {
+      margin-top: 20px;
+    }
+
+    .download-btn {
+      background: var(--primary);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+  </style>
+
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    // Load header dynamically
+    fetch('/header.html')
+      .then(res => res.text())
+      .then(data => {
+        const headerWrapper = document.createElement('div');
+        headerWrapper.innerHTML = data;
+        document.body.insertBefore(headerWrapper, document.body.firstChild);
+
+        // After header is added, wait for it to render then set up hamburger
+        setTimeout(() => {
+          const hamburger = document.querySelector('.hamburger');
+          const mobileMenu = document.getElementById('mobileMenu');
+
+          if (hamburger && mobileMenu) {
+            // Toggle mobile menu
+            hamburger.addEventListener('click', (e) => {
+              e.stopPropagation();
+              mobileMenu.classList.toggle('show');
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+              if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+                mobileMenu.classList.remove('show');
+              }
+            });
+          }
+        }, 100);
+      });
+
+    // File upload behavior
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+    if (uploadBox && fileInput && fileNameDisplay) {
+      uploadBox.addEventListener('click', () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        fileNameDisplay.textContent = file ? `📄 ${file.name}` : '';
+      });
+    }
+  });
+</script>
+
+</head>
+
+<body>
+  <div id="header-placeholder"></div>
+
+  <div class="container">
+    <h2 style="font-size: 24px; font-weight: 600; color: #222; margin-bottom: 20px;">
+  <i class="#"></i> Protect PDF with Password
+</h2>
+    
+
+    <form id="protectForm" enctype="multipart/form-data">
+      <div class="upload-area" id="uploadBox">
+        <i class="fa-solid fa-cloud-arrow-up fa-2x"></i><br>
+        <strong>Click to upload PDF</strong><br>
+        <span id="fileNameDisplay" style="display:block; margin-top:10px; color:#444;"></span>
+        <input type="file" id="fileInput" name="file" accept=".pdf" required style="display: none;" />
+      </div>
+
+      <input type="password" name="password" placeholder="Enter password" required />
+      <input type="password" name="confirm" placeholder="Confirm password" required />
+      <button type="submit"><i class="fa-solid fa-lock"></i> Protect PDF</button>
+    </form>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <!-- How to Password Protect a PDF – Promo Styled Section -->
+<section class="bg-gray-100 text-center py-24 px-4 mt-24">
+  <h3 class="text-4xl font-semibold mb-6 text-gray-800">How to Password Protect a PDF?</h3>
+  <p class="text-gray-700 max-w-3xl mx-auto text-base sm:text-lg mb-10">
+    Secure your confidential documents easily with File2do’s PDF protection tool. Just follow these simple steps:
+  </p>
+
+  <div class="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-left">
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-green-600 text-2xl mb-2"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+      <h4 class="font-semibold text-lg mb-2">1. Upload PDF</h4>
+      <p class="text-gray-600 text-sm">Click the upload box and select the PDF file you want to protect.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-blue-600 text-2xl mb-2"><i class="fa-solid fa-lock"></i></div>
+      <h4 class="font-semibold text-lg mb-2">2. Set Password</h4>
+      <p class="text-gray-600 text-sm">Enter a strong password that will be required to open the file.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-purple-600 text-2xl mb-2"><i class="fa-solid fa-download"></i></div>
+      <h4 class="font-semibold text-lg mb-2">3. Download</h4>
+      <p class="text-gray-600 text-sm">Click “Protect” and download your secured PDF instantly.</p>
+    </div>
+  </div>
+</section>
+
+
+  <footer class="bg-white border-t mt-10">
+  <div class="max-w-7xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-base">
+    <div>
+      <h4 class="font-bold mb-3">File2do</h4>
+      <ul class="space-y-2">
+        <li><a href="index.html" class="text-gray-700 hover:text-green-600">Home</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Resources</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Security</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">FAQ</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Products</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Desktop</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Mobile</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">API</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Company</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">About</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Blog</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Press</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Legal</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Terms</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Privacy</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="text-center py-4 text-xs text-gray-400">
+    &copy; 2025 File2do. All rights reserved.
+  </div>
+</footer>
+
+
+  <script>
+    const form = document.getElementById('protectForm');
+    const result = document.getElementById('result');
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      result.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+
+      const formData = new FormData(form);
+      const pass = form.password.value;
+      const confirm = form.confirm.value;
+
+      if (pass !== confirm) {
+        result.innerHTML = '❌ Passwords do not match.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/protect-pdf', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.downloadUrl) {
+          result.innerHTML = `
+            <strong>✅ PDF Protected!</strong><br>
+            <a class="download-btn" href="${data.downloadUrl}" download>
+              <i class="fa-solid fa-download"></i> Download PDF
+            </a>
+          `;
+        } else {
+          result.innerHTML = '❌ Protection failed.';
+        }
+      } catch (err) {
+        console.error(err);
+        result.innerHTML = '❌ An error occurred.';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Organize PDF – File2do</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="icon" type="image/png" href="/iconB.png">
+  <style>
+    :root {
+      --main-bg: #eef5ff;
+      --card-bg: #fff;
+      --primary: #4CAF50;
+      --primary-dark: #388e3c;
+      --text-light: #666;
+      --text-dark: #222;
+      --border: #ccc;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--main-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .container {
+  background: var(--card-bg);
+  width: 90%;
+  max-width: 580px;
+  margin: 140px auto;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+
+    h2 {
+      text-align: center;
+      color: var(--text-dark);
+    }
+
+    .upload-area {
+      border: 2px dashed var(--primary);
+      padding: 25px;
+      text-align: center;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .pages {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .page-item {
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      position: relative;
+      cursor: grab;
+      background: #fff;
+      width: 150px;
+    }
+
+    .page-item.dragging {
+      opacity: 0.5;
+    }
+
+    canvas {
+      width: 100%;
+      display: block;
+      border-radius: 4px;
+    }
+
+    .page-controls {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .page-controls button {
+      background: #f44336;
+      border: none;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .page-controls .add-btn {
+      background: var(--primary);
+    }
+
+    button#organizeBtn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .result {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .download-btn {
+      background: var(--primary-dark);
+      padding: 10px 20px;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+    }
+
+    @keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.page-number {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--primary);
+  color: white;
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+
+
+  </style>
+
+  <script>
+  // Load dynamic header with mobile menu toggle functionality
+  window.addEventListener('DOMContentLoaded', () => {
+    fetch('/header.html')
+      .then(res => res.text())
+      .then(data => {
+        const header = document.createElement('div');
+        header.innerHTML = data;
+        document.body.insertBefore(header, document.body.firstChild);
+
+        // Wait for DOM update before attaching handlers
+        setTimeout(() => {
+          const hamburger = document.querySelector('.hamburger');
+          const mobileMenu = document.getElementById('mobileMenu');
+
+          if (hamburger && mobileMenu) {
+            // Toggle the menu
+            hamburger.addEventListener('click', (e) => {
+              e.stopPropagation();
+              mobileMenu.classList.toggle('show');
+            });
+
+            // Close the menu when clicking outside
+            document.addEventListener('click', (e) => {
+              if (!mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+                mobileMenu.classList.remove('show');
+              }
+            });
+          }
+        }, 100); // slight delay to ensure elements are loaded
+      });
+  });
+</script>
+
+</head>
+
+<body>
+  <div class="container">
+    <h2 style="font-size: 24px; font-weight: 600; color: #222; margin-bottom: 20px;">
+  <i class="#"></i> Organize Your PDF
+</h2>
+    
+
+    <div class="upload-area" onclick="document.getElementById('pdfInput').click()">
+      <i class="fa-solid fa-cloud-arrow-up fa-2x"></i><br>
+      <strong>Click to upload your PDF</strong>
+      <input type="file" id="pdfInput" accept="application/pdf" />
+    </div>
+
+    <div class="pages" id="pageContainer"></div>
+
+    <button id="organizeBtn"><i class="fa-solid fa-check"></i> Apply Changes & Download</button>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <!-- How to Organize PDF – Promo Styled Section -->
+<section class="bg-gray-100 text-center py-24 px-4 mt-24">
+  <h3 class="text-4xl font-semibold mb-6 text-gray-800">How to Organize PDF Pages?</h3>
+  <p class="text-gray-700 max-w-3xl mx-auto text-base sm:text-lg mb-10">
+    Easily rearrange, remove, or insert blank pages into your PDF. Our visual tool gives you full control over the layout of your document.
+  </p>
+
+  <div class="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-left">
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-yellow-600 text-2xl mb-2"><i class="fa-solid fa-up-down-left-right"></i></div>
+      <h4 class="font-semibold text-lg mb-2">1. Rearrange Pages</h4>
+      <p class="text-gray-600 text-sm">Drag and drop pages to rearrange their order quickly and visually.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-red-600 text-2xl mb-2"><i class="fa-solid fa-trash"></i></div>
+      <h4 class="font-semibold text-lg mb-2">2. Delete Unwanted Pages</h4>
+      <p class="text-gray-600 text-sm">Remove any page instantly by clicking the trash icon on its thumbnail.</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+      <div class="text-green-600 text-2xl mb-2"><i class="fa-solid fa-file-circle-plus"></i></div>
+      <h4 class="font-semibold text-lg mb-2">3. Insert Blank Pages</h4>
+      <p class="text-gray-600 text-sm">Add blank pages anywhere in your PDF as placeholders or separators.</p>
+    </div>
+  </div>
+  
+</section>
+
+<footer class="bg-white border-t mt-10">
+  <div class="max-w-7xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-base">
+    <div>
+      <h4 class="font-bold mb-3">File2do</h4>
+      <ul class="space-y-2">
+        <li><a href="index.html" class="text-gray-700 hover:text-green-600">Home</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Resources</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Security</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">FAQ</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Products</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Desktop</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Mobile</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">API</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Company</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">About</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Blog</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Press</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-bold mb-3">Legal</h4>
+      <ul class="space-y-2">
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Terms</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Privacy</a></li>
+        <li><a href="#" class="text-gray-700 hover:text-green-600">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="text-center py-4 text-xs text-gray-400">
+    &copy; 2025 File2do. All rights reserved.
+  </div>
+</footer>
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script>
+    const pdfInput = document.getElementById('pdfInput');
+    const pageContainer = document.getElementById('pageContainer');
+    const result = document.getElementById('result');
+    const organizeBtn = document.getElementById('organizeBtn');
+    let pages = [];
+
+    pdfInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async function () {
+        const typedarray = new Uint8Array(reader.result);
+        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+
+        pages = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 0.4 });
+
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+
+          pages.push({ canvas, index: i - 1 });
+        }
+
+        renderPages();
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    function renderPages() {
+  pageContainer.innerHTML = '';
+
+  pages.forEach((pg, idx) => {
+    const item = document.createElement('div');
+    item.className = 'page-item';
+    item.draggable = true;
+    item.dataset.index = idx;
+
+    // Handle blank pages
+    if (pg.blank) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 150;
+      canvas.height = 200;
+
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#f9f9f9';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#aaa';
+      ctx.font = '16px Segoe UI';
+      ctx.textAlign = 'center';
+      ctx.fillText('Blank Page', canvas.width / 2, canvas.height / 2);
+
+      pg.canvas = canvas;
+    }
+
+    // Append canvas
+    item.appendChild(pg.canvas);
+
+    // Page number overlay
+    const numberTag = document.createElement('div');
+    numberTag.className = 'page-number';
+    numberTag.textContent = `Page ${idx + 1}`;
+    item.appendChild(numberTag);
+
+    // Control buttons
+    const controls = document.createElement('div');
+    controls.className = 'page-controls';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.onclick = () => {
+      pages.splice(idx, 1);
+      renderPages();
+    };
+
+    const addBtn = document.createElement('button');
+    addBtn.textContent = '+ Blank';
+    addBtn.className = 'add-btn';
+    addBtn.onclick = () => {
+      pages.splice(idx + 1, 0, { blank: true });
+      renderPages();
+    };
+
+    controls.appendChild(deleteBtn);
+    controls.appendChild(addBtn);
+    item.appendChild(controls);
+
+    // Animate appearance
+    item.style.animation = 'fadeIn 0.3s ease-in-out';
+
+    // Drag behavior
+    item.addEventListener('dragstart', (e) => {
+      item.classList.add('dragging');
+      e.dataTransfer.setData('index', idx);
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+    });
+
+    item.addEventListener('dragover', (e) => e.preventDefault());
+
+    item.addEventListener('drop', (e) => {
+      const from = parseInt(e.dataTransfer.getData('index'));
+      const to = idx;
+      const temp = pages[from];
+      pages.splice(from, 1);
+      pages.splice(to, 0, temp);
+      renderPages();
+    });
+
+    pageContainer.appendChild(item);
+  });
+}
+
+
+
+    organizeBtn.addEventListener('click', async () => {
+      if (pages.length === 0) return;
+
+      const formData = new FormData();
+      formData.append('originalPdf', pdfInput.files[0]);
+      formData.append('actions', JSON.stringify(pages.map(p => p.blank ? 'blank' : p.index)));
+
+      result.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Organizing...';
+
+      try {
+        const res = await fetch('/organize-pdf', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (data.downloadUrl) {
+          result.innerHTML = `
+            <strong>✅ PDF Organized!</strong><br>
+            <a class="download-btn" href="${data.downloadUrl}" download>
+              <i class="fa-solid fa-download"></i> Download PDF
+            </a>
+          `;
+        } else {
+          result.innerHTML = '❌ Failed to organize PDF.';
+        }
+      } catch (err) {
+        result.innerHTML = '❌ An error occurred.';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
