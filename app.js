@@ -24,7 +24,15 @@ app.use(cors({
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-app.use('/compressed', express.static('compressed'));
+app.use('/compressed', (req, res, next) => {
+  const filePath = path.join(__dirname, 'compressed', req.path);
+  if (fs.existsSync(filePath)) {
+    res.download(filePath); // forces download
+  } else {
+    res.status(404).send('File not found.');
+  }
+});
+
 
 const storage = multer.diskStorage({
   destination: 'uploads/',
