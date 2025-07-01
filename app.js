@@ -5,34 +5,27 @@ const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
 const libre = require('libreoffice-convert');
-libre._libreOfficeBinaryPath = 'C:\\Program Files\\LibreOffice\\program\\soffice.exe';
 const { PDFDocument, degrees } = require('pdf-lib');
 const archiver = require('archiver');
 const glob = require('glob');
 const cors = require('cors');
 
-const app = express(); // ✅ define app first
+const app = express();
 const PORT = 3000;
 
-// ✅ Then use app
 app.use(cors({
   origin: ['https://file2do.com', 'https://www.file2do.com', 'http://localhost:3000'],
   methods: ['GET', 'POST'],
 }));
 
-
-
-// Ensure folders exist
 ['uploads', 'compressed'].forEach(folder => {
   if (!fs.existsSync(folder)) fs.mkdirSync(folder);
 });
 
-// Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use('/compressed', express.static('compressed'));
 
-// Multer Setup
 const storage = multer.diskStorage({
   destination: 'uploads/',
   filename: (_, file, cb) => {
@@ -42,7 +35,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-/* ------------ IMAGE COMPRESSION ------------ */
 app.post('/upload', upload.single('image'), async (req, res) => {
   const inputPath = req.file.path;
   const outputFilename = 'compressed_' + req.file.filename;
@@ -78,15 +70,11 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   }
 });
 
-/* ------------ VIDEO COMPRESSION ------------ */
-
-
 app.post('/compress-pdf', upload.single('file'), async (req, res) => {
   const compression = parseInt(req.body.compression) || 60;
   const inputPath = req.file.path;
   const originalSize = fs.statSync(inputPath).size;
 
-  // EXTREME compression when slider is at or above 90
   if (compression >= 90) {
     const outputDir = path.join('compressed', `temp_${Date.now()}`);
     const outputPdf = path.join('compressed', `extreme_${Date.now()}.pdf`);
@@ -94,9 +82,8 @@ app.post('/compress-pdf', upload.single('file'), async (req, res) => {
     try {
       if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
 
-      // Adjust DPI + quality to try hitting 90% compression
-      const dpi = 50; // Low DPI
-      const quality = 30; // Use mid-low JPEG quality 
+      const dpi = 50;
+      const quality = 30;
 
       const cmd = `pdftoppm "${inputPath}" "${outputDir}/page" -jpeg -r ${dpi}`;
       console.log(`📄 Converting to JPGs @ ${dpi} DPI for extreme compression`);
@@ -108,9 +95,7 @@ app.post('/compress-pdf', upload.single('file'), async (req, res) => {
         });
       });
 
-      const imageFiles = fs.readdirSync(outputDir)
-        .filter(f => f.endsWith('.jpg'))
-        .sort();
+      const imageFiles = fs.readdirSync(outputDir).filter(f => f.endsWith('.jpg')).sort();
 
       if (imageFiles.length === 0) throw new Error('❌ No JPGs generated from PDF.');
 
@@ -127,7 +112,6 @@ app.post('/compress-pdf', upload.single('file'), async (req, res) => {
       const pdfBytes = await pdfDoc.save();
       fs.writeFileSync(outputPdf, pdfBytes);
 
-      // Cleanup
       fs.unlinkSync(inputPath);
       fs.rmSync(outputDir, { recursive: true, force: true });
 
@@ -150,7 +134,6 @@ app.post('/compress-pdf', upload.single('file'), async (req, res) => {
     }
 
   } else {
-    // STANDARD Ghostscript compression
     const outputFilename = `compressed_${Date.now()}.pdf`;
     const outputPath = path.join('compressed', outputFilename);
 
@@ -160,7 +143,7 @@ app.post('/compress-pdf', upload.single('file'), async (req, res) => {
     else if (compression >= 40) setting = '/printer';
     else setting = '/prepress';
 
-    const gsCmd = `gswin64c -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
+    const gsCmd = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
 -dDownsampleColorImages=true -dColorImageResolution=72 \
 -dDownsampleGrayImages=true -dGrayImageResolution=72 \
 -dDownsampleMonoImages=true -dMonoImageResolution=72 \
@@ -189,7 +172,6 @@ app.post('/compress-pdf', upload.single('file'), async (req, res) => {
     });
   }
 });
-
 
 
 
