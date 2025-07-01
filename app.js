@@ -16,9 +16,10 @@ const PORT = 3000;
 
 // ✅ Then use app
 app.use(cors({
-  origin: 'https://file2do.com',
+  origin: ['https://file2do.com', 'https://www.file2do.com', 'http://localhost:3000'],
   methods: ['GET', 'POST'],
 }));
+
 
 
 // Ensure folders exist
