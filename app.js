@@ -323,7 +323,7 @@ app.post('/merge-pdf', upload.array('files'), async (req, res) => {
 });
 
 /* ------------ PDF TO WORD ------------ */
-const glob = require('glob');
+
 
 app.post('/pdf-to-word', upload.single('file'), async (req, res) => {
   const inputPath = req.file.path;
