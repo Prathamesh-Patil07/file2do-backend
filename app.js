@@ -66,7 +66,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     const compressedSize = fs.statSync(outputPath).size;
     res.json({
-      downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       size: compressedSize,
     });
 
@@ -134,7 +134,7 @@ app.post('/compress-pdf', upload.single('file'), async (req, res) => {
       const percent = Math.round((1 - finalSize / originalSize) * 100);
 
       res.json({
-        downloadUrl: `https://file2do-backend.onrender.com/compressed/${path.basename(outputPdf)}`,
+        downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${path.basename(outputPdf)}`,
         originalSize,
         finalSize,
         compressionPercent: percent,
@@ -179,7 +179,7 @@ app.post('/compress-pdf', upload.single('file'), async (req, res) => {
       const percent = Math.round((1 - finalSize / originalSize) * 100);
 
       res.json({
-        downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+        downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
         originalSize,
         finalSize,
         compressionPercent: percent,
@@ -216,7 +216,7 @@ app.post('/convert-to-pdf', upload.single('file'), (req, res) => {
     const convertedSize = fs.statSync(outputPath).size;
 
     res.json({
-      downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       size: convertedSize
     });
 
@@ -253,7 +253,7 @@ app.post('/image-to-pdf', upload.single('file'), async (req, res) => {
     fs.writeFileSync(outputPath, pdfBytes);
 
     res.json({
-      downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       size: pdfBytes.length
     });
 
@@ -282,7 +282,7 @@ app.post('/make-searchable', upload.single('file'), (req, res) => {
 
     const newSize = fs.statSync(outputPath).size;
     res.json({
-      downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       size: newSize
     });
 
@@ -314,7 +314,7 @@ app.post('/merge-pdf', upload.array('files'), async (req, res) => {
     const outputPath = path.join('compressed', outputFilename);
 
     fs.writeFileSync(outputPath, mergedPdfBytes);
-    res.json({ downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}` });
+    res.json({ downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}` });
 
   } catch (error) {
     console.error('Merge Error:', error);
@@ -354,7 +354,7 @@ app.post('/pdf-to-word', upload.single('file'), async (req, res) => {
       const size = fs.statSync(latestFile).size;
 
       res.json({
-        downloadUrl: `https://file2do-backend.onrender.com/compressed/${path.basename(latestFile)}`,
+        downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${path.basename(latestFile)}`,
         size,
       });
     });
@@ -385,7 +385,7 @@ app.post('/protect-pdf', upload.single('file'), (req, res) => {
 
     const size = fs.statSync(outputPath).size;
     res.json({
-      downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       size,
     });
   });
@@ -421,7 +421,7 @@ app.post('/organize-pdf', upload.single('originalPdf'), async (req, res) => {
     fs.unlinkSync(inputPath);
 
     res.json({
-      downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       size: pdfBytes.length
     });
   } catch (err) {
@@ -455,7 +455,7 @@ app.post('/pdf-to-jpg', upload.single('file'), (req, res) => {
 
     output.on('close', () => {
       res.json({
-        downloadUrl: `https://file2do-backend.onrender.com/compressed/${zipName}`,
+        downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${zipName}`,
         size: fs.statSync(zipPath).size
       });
     });
@@ -492,7 +492,7 @@ app.post('/compresss-pdf', upload.single('file'), (req, res) => {
       const compressedSize = fs.statSync(outputPath).size;
 
       res.json({
-        downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+        downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
         size: compressedSize,
       });
     });
@@ -527,7 +527,7 @@ app.post('/compresss-pdf', upload.single('file'), (req, res) => {
       const compressedSize = fs.statSync(outputPath).size;
 
       res.json({
-        downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+        downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
         size: compressedSize
       });
     });
@@ -592,7 +592,7 @@ app.post('/rotate-pdf', upload.single('originalPdf'), async (req, res) => {
     console.log("✅ PDF created:", outputPath);
 
     res.json({
-      downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       size: pdfBytes.length
     });
 
@@ -629,7 +629,7 @@ app.post('/compress-video', upload.single('file'), async (req, res) => {
 
     const finalSize = fs.statSync(outputPath).size;
     res.json({
-      downloadUrl: `https://file2do-backend.onrender.com/compressed/${outputFilename}`,
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       finalSize
     });
   });
