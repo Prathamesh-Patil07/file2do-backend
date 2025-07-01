@@ -6,30 +6,20 @@ const fs = require('fs');
 const { exec } = require('child_process');
 const libre = require('libreoffice-convert');
 libre._libreOfficeBinaryPath = 'C:\\Program Files\\LibreOffice\\program\\soffice.exe';
-const { PDFDocument } = require('pdf-lib');
+const { PDFDocument, degrees } = require('pdf-lib');
 const archiver = require('archiver');
-const { degrees } = require('pdf-lib');
-
-
+const glob = require('glob');
 const cors = require('cors');
 
+const app = express(); // ✅ define app first
+const PORT = 3000;
+
+// ✅ Then use app
 app.use(cors({
-  origin: 'https://file2do.com', // 🔁 Replace with your actual domain on Hostinger
+  origin: 'https://file2do.com',
   methods: ['GET', 'POST'],
 }));
 
-
-
-
-
-
-
-
-
-
-
-const app = express();
-const PORT = 3000;
 
 // Ensure folders exist
 ['uploads', 'compressed'].forEach(folder => {
