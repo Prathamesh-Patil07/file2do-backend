@@ -462,6 +462,13 @@ app.post('/pdf-to-jpg', upload.single('file'), (req, res) => {
   });
 });
 
+app.post('/compress-doc', (req, res, next) => {
+  // Call /compresss-pdf logic directly
+  req.url = '/compresss-pdf';
+  next();
+});
+
+
 
 / * ------------ ADD PAGE NUMBERS TO PDF ------------ */
 app.post('/compresss-pdf', upload.single('file'), (req, res) => {
