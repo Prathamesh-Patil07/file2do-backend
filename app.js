@@ -24,14 +24,12 @@ app.use(cors({
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-app.use('/compressed', (req, res, next) => {
-  const filePath = path.join(__dirname, 'compressed', req.path);
-  if (fs.existsSync(filePath)) {
-    res.download(filePath); // forces download
-  } else {
-    res.status(404).send('File not found.');
+app.use('/compressed', express.static(path.join(__dirname, 'compressed'), {
+  setHeaders: (res, filePath) => {
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
   }
-});
+}));
+
 
 
 const storage = multer.diskStorage({
@@ -462,11 +460,35 @@ app.post('/pdf-to-jpg', upload.single('file'), (req, res) => {
   });
 });
 
-app.post('/compress-doc', (req, res, next) => {
-  // Call /compresss-pdf logic directly
-  req.url = '/compresss-pdf';
-  next();
+app.post('/compress-doc', upload.single('file'), (req, res) => {
+  const inputPath = req.file.path;
+  const ext = path.extname(req.file.originalname).toLowerCase();
+
+  if (['.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx'].includes(ext)) {
+    const outputFilename = path.basename(req.file.originalname, ext) + '.pdf';
+    const outputPath = path.resolve('compressed', outputFilename);
+    const file = fs.readFileSync(inputPath);
+
+    libre.convert(file, '.pdf', undefined, (err, done) => {
+      fs.unlinkSync(inputPath);
+      if (err) {
+        console.error('LibreOffice Convert Error:', err);
+        return res.status(500).send('File conversion failed.');
+      }
+      fs.writeFileSync(outputPath, done);
+      const compressedSize = fs.statSync(outputPath).size;
+
+      res.json({
+        downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
+        size: compressedSize,
+      });
+    });
+
+  } else {
+    return res.status(400).send('Unsupported file format.');
+  }
 });
+
 
 
 
