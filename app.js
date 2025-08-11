@@ -42,14 +42,16 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-// New Endpoint: Compress PDF to Target Size
+// ... (existing imports and app setup remain the same)
+
+// New Endpoint: Compress PDF to Target Size (using iterative Ghostscript)
 app.post('/compress-pdf-to-size', upload.single('file'), async (req, res) => {
   const inputPath = req.file.path;
   const originalSize = fs.statSync(inputPath).size;
   const targetSizeKB = parseInt(req.body.targetSize); // e.g., 100, 200, 500, 1000
   const targetSizeBytes = targetSizeKB * 1024; // Convert KB to bytes
   const outputFilename = `compressed_to_${targetSizeKB}kb_${Date.now()}.pdf`;
-  const outputPath = path.join('compressed', outputFilename);
+  let outputPath = path.join('compressed', outputFilename);
 
   // Validate input
   if (!req.file.mimetype.includes('pdf')) {
@@ -61,116 +63,78 @@ app.post('/compress-pdf-to-size', upload.single('file'), async (req, res) => {
     return res.status(400).send('Target size must be between 10KB and 10MB.');
   }
   if (originalSize < targetSizeBytes * 0.9) {
-    fs.unlinkSync(inputPath);
-    return res.status(400).send('Original file is already smaller than target size.');
+    fs.renameSync(inputPath, outputPath);
+    return res.json({
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
+      originalSize,
+      finalSize: originalSize,
+      compressionPercent: 0,
+      achievedTarget: true,
+    });
   }
 
   try {
-    // Read PDF into memory
-    const pdfBytes = fs.readFileSync(inputPath);
-    let pdfDoc = await PDFDocument.load(pdfBytes);
-    let currentSize = pdfBytes.length;
-    let quality = 80; // Start with high quality
+    let res = 150; // Starting resolution
+    let currentSize = Infinity;
+    let tempOutput = null;
+    let success = false;
     const maxIterations = 5;
-    let iteration = 0;
 
-    // Iterative compression
-    while (currentSize > targetSizeBytes * 1.1 && iteration < maxIterations) {
-      const newPdfDoc = await PDFDocument.create();
-      const pages = pdfDoc.getPages();
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+      tempOutput = path.join('compressed', `temp_${Date.now()}.pdf`);
+      const gsCmd = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
+-dDownsampleColorImages=true -dColorImageResolution=${Math.round(res)} \
+-dDownsampleGrayImages=true -dGrayImageResolution=${Math.round(res)} \
+-dDownsampleMonoImages=true -dMonoImageResolution=${Math.round(res)} \
+-dCompressFonts=true -dEmbedAllFonts=true -dSubsetFonts=true \
+-dAutoRotatePages=/None -dPDFSETTINGS=/ebook -dNOPAUSE -dQUIET -dBATCH \
+-sOutputFile="${tempOutput}" "${inputPath}"`;
 
-      for (const page of pages) {
-        const newPage = newPdfDoc.addPage([page.getWidth(), page.getHeight()]);
-        const images = page.node.getImages();
+      await new Promise((resolve, reject) => {
+        exec(gsCmd, (err, stdout, stderr) => {
+          if (err) return reject(new Error(`Ghostscript error: ${stderr}`));
+          resolve();
+        });
+      });
 
-        for (const [ref, img] of images) {
-          const imageData = img.getImage();
-          if (imageData && (imageData.Name === 'JPEG' || imageData.Name === 'JPG')) {
-            const buffer = await pdfDoc.context.lookup(imageData.ref);
-            const sharpImg = await sharp(buffer).jpeg({ quality }).toBuffer();
-            const embeddedImg = await newPdfDoc.embedJpg(sharpImg);
-            newPage.drawImage(embeddedImg, {
-              x: img.X,
-              y: img.Y,
-              width: img.Width,
-              height: img.Height,
-            });
-          } else {
-            // Copy non-image content (text, vectors)
-            newPage.node.setContentStreams(page.node.getContentStreams());
-          }
-        }
+      currentSize = fs.statSync(tempOutput).size;
 
-        // Copy annotations, forms, etc.
-        newPage.node.setAnnotations(page.node.getAnnotations());
+      if (currentSize <= targetSizeBytes * 1.1 && currentSize >= targetSizeBytes * 0.9) {
+        success = true;
+        break;
+      } else {
+        // Adjust resolution proportionally (using sqrt for better approximation)
+        const adjustmentFactor = Math.sqrt(targetSizeBytes / currentSize);
+        res = Math.max(50, Math.min(300, res * adjustmentFactor));
+
+        // Keep the current temp as fallback, delete previous if any (but we overwrite tempOutput each time)
       }
-
-      // Save and check size
-      pdfBytes = await newPdfDoc.save();
-      currentSize = pdfBytes.length;
-      pdfDoc = newPdfDoc;
-
-      // Reduce quality for next iteration
-      quality = Math.max(10, quality - 15);
-      iteration++;
     }
 
-    // Save final PDF
-    fs.writeFileSync(outputPath, pdfBytes);
-    fs.unlinkSync(inputPath);
+    // Use the final tempOutput (either successful or closest)
+    fs.renameSync(tempOutput, outputPath);
 
-    const finalSize = fs.statSync(outputPath).size;
+    const finalSize = currentSize;
     const percent = Math.round((1 - finalSize / originalSize) * 100);
+
+    fs.unlinkSync(inputPath);
 
     res.json({
       downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
       originalSize,
       finalSize,
       compressionPercent: percent,
-      achievedTarget: finalSize <= targetSizeBytes * 1.1 && finalSize >= targetSizeBytes * 0.9,
+      achievedTarget: success,
     });
   } catch (err) {
     console.error('Compression Error:', err);
     fs.unlinkSync(inputPath);
-    if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+    if (fs.existsSync(tempOutput)) fs.unlinkSync(tempOutput);
     res.status(500).send('PDF compression failed.');
   }
 });
 
-app.post('/upload', upload.single('image'), async (req, res) => {
-  const inputPath = req.file.path;
-  const outputFilename = 'compressed_' + req.file.filename;
-  const outputPath = path.join('compressed', outputFilename);
-  const allowedTypes = ['image/jpeg', 'image/png'];
-
-  if (!allowedTypes.includes(req.file.mimetype)) {
-    fs.unlinkSync(inputPath);
-    return res.status(400).send('Only JPG and PNG formats are allowed.');
-  }
-
-  const compression = parseInt(req.body.compression) || 60;
-  const quality = Math.max(10, 100 - compression);
-
-  try {
-    const image = sharp(inputPath);
-    if (req.file.mimetype === 'image/png') {
-      await image.png({ quality }).toFile(outputPath);
-    } else {
-      await image.jpeg({ quality }).toFile(outputPath);
-    }
-
-    const compressedSize = fs.statSync(outputPath).size;
-    res.json({
-      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
-      size: compressedSize,
-    });
-
-    fs.unlinkSync(inputPath);
-  } catch (err) {
-    console.error('Image Compression Error:', err);
-    res.status(500).send('Image compression failed.');
-  }
-});
+// ... (rest of the app code, including app.listen)
 
 app.post('/compress-pdf', upload.single('file'), async (req, res) => {
   const compression = parseInt(req.body.compression) || 60;
