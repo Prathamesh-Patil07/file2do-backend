@@ -42,26 +42,27 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-// ... (existing imports and app setup remain the same)
+// ... (keep existing imports and app setup)
 
-// New Endpoint: Compress PDF to Target Size (using iterative Ghostscript)
 app.post('/compress-pdf-to-size', upload.single('file'), async (req, res) => {
-  const inputPath = req.file.path;
-  const originalSize = fs.statSync(inputPath).size;
+  const inputPath = req.file?.path;
   const targetSizeKB = parseInt(req.body.targetSize); // e.g., 100, 200, 500, 1000
   const targetSizeBytes = targetSizeKB * 1024; // Convert KB to bytes
   const outputFilename = `compressed_to_${targetSizeKB}kb_${Date.now()}.pdf`;
   let outputPath = path.join('compressed', outputFilename);
+  let tempOutput = null;
 
   // Validate input
-  if (!req.file.mimetype.includes('pdf')) {
-    fs.unlinkSync(inputPath);
+  if (!req.file || !req.file.mimetype.includes('pdf')) {
+    if (inputPath && fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
     return res.status(400).send('Only PDF files are allowed.');
   }
   if (!targetSizeKB || targetSizeKB < 10 || targetSizeKB > 10000) {
-    fs.unlinkSync(inputPath);
+    if (inputPath && fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
     return res.status(400).send('Target size must be between 10KB and 10MB.');
   }
+
+  const originalSize = fs.statSync(inputPath).size;
   if (originalSize < targetSizeBytes * 0.9) {
     fs.renameSync(inputPath, outputPath);
     return res.json({
@@ -74,50 +75,60 @@ app.post('/compress-pdf-to-size', upload.single('file'), async (req, res) => {
   }
 
   try {
-    let res = 150; // Starting resolution
+    let dpi = 150; // Starting resolution
     let currentSize = Infinity;
-    let tempOutput = null;
     let success = false;
     const maxIterations = 5;
 
     for (let iteration = 0; iteration < maxIterations; iteration++) {
-      tempOutput = path.join('compressed', `temp_${Date.now()}.pdf`);
+      tempOutput = path.join('compressed', `temp_${Date.now()}_${iteration}.pdf`);
       const gsCmd = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
--dDownsampleColorImages=true -dColorImageResolution=${Math.round(res)} \
--dDownsampleGrayImages=true -dGrayImageResolution=${Math.round(res)} \
--dDownsampleMonoImages=true -dMonoImageResolution=${Math.round(res)} \
+-dDownsampleColorImages=true -dColorImageResolution=${Math.round(dpi)} \
+-dDownsampleGrayImages=true -dGrayImageResolution=${Math.round(dpi)} \
+-dDownsampleMonoImages=true -dMonoImageResolution=${Math.round(dpi)} \
 -dCompressFonts=true -dEmbedAllFonts=true -dSubsetFonts=true \
 -dAutoRotatePages=/None -dPDFSETTINGS=/ebook -dNOPAUSE -dQUIET -dBATCH \
 -sOutputFile="${tempOutput}" "${inputPath}"`;
 
+      console.log(`Running Ghostscript iteration ${iteration + 1} with DPI=${Math.round(dpi)}`);
+
       await new Promise((resolve, reject) => {
         exec(gsCmd, (err, stdout, stderr) => {
-          if (err) return reject(new Error(`Ghostscript error: ${stderr}`));
+          if (err) {
+            console.error('Ghostscript stderr:', stderr);
+            return reject(new Error(`Ghostscript failed: ${stderr}`));
+          }
           resolve();
         });
       });
 
+      if (!fs.existsSync(tempOutput)) {
+        throw new Error('Ghostscript failed to generate output file.');
+      }
+
       currentSize = fs.statSync(tempOutput).size;
+      console.log(`Iteration ${iteration + 1}: Output size = ${currentSize} bytes`);
 
       if (currentSize <= targetSizeBytes * 1.1 && currentSize >= targetSizeBytes * 0.9) {
         success = true;
         break;
       } else {
-        // Adjust resolution proportionally (using sqrt for better approximation)
+        // Adjust DPI proportionally
         const adjustmentFactor = Math.sqrt(targetSizeBytes / currentSize);
-        res = Math.max(50, Math.min(300, res * adjustmentFactor));
-
-        // Keep the current temp as fallback, delete previous if any (but we overwrite tempOutput each time)
+        dpi = Math.max(50, Math.min(300, dpi * adjustmentFactor));
+        // Clean up previous temp file if not the final one
+        if (iteration < maxIterations - 1 && fs.existsSync(tempOutput)) {
+          fs.unlinkSync(tempOutput);
+        }
       }
     }
 
-    // Use the final tempOutput (either successful or closest)
+    // Use the final tempOutput
     fs.renameSync(tempOutput, outputPath);
+    if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
 
-    const finalSize = currentSize;
+    const finalSize = fs.statSync(outputPath).size;
     const percent = Math.round((1 - finalSize / originalSize) * 100);
-
-    fs.unlinkSync(inputPath);
 
     res.json({
       downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
@@ -127,12 +138,14 @@ app.post('/compress-pdf-to-size', upload.single('file'), async (req, res) => {
       achievedTarget: success,
     });
   } catch (err) {
-    console.error('Compression Error:', err);
-    fs.unlinkSync(inputPath);
-    if (fs.existsSync(tempOutput)) fs.unlinkSync(tempOutput);
-    res.status(500).send('PDF compression failed.');
+    console.error('Compression Error:', err.message);
+    if (inputPath && fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+    if (tempOutput && fs.existsSync(tempOutput)) fs.unlinkSync(tempOutput);
+    res.status(500).send(`PDF compression failed: ${err.message}`);
   }
 });
+
+// ... (rest of the app code, including app.listen)
 
 // ... (rest of the app code, including app.listen)
 
