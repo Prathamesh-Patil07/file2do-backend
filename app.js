@@ -41,6 +41,102 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+
+// New Endpoint: Compress PDF to Target Size
+app.post('/compress-pdf-to-size', upload.single('file'), async (req, res) => {
+  const inputPath = req.file.path;
+  const originalSize = fs.statSync(inputPath).size;
+  const targetSizeKB = parseInt(req.body.targetSize); // e.g., 100, 200, 500, 1000
+  const targetSizeBytes = targetSizeKB * 1024; // Convert KB to bytes
+  const outputFilename = `compressed_to_${targetSizeKB}kb_${Date.now()}.pdf`;
+  const outputPath = path.join('compressed', outputFilename);
+
+  // Validate input
+  if (!req.file.mimetype.includes('pdf')) {
+    fs.unlinkSync(inputPath);
+    return res.status(400).send('Only PDF files are allowed.');
+  }
+  if (!targetSizeKB || targetSizeKB < 10 || targetSizeKB > 10000) {
+    fs.unlinkSync(inputPath);
+    return res.status(400).send('Target size must be between 10KB and 10MB.');
+  }
+  if (originalSize < targetSizeBytes * 0.9) {
+    fs.unlinkSync(inputPath);
+    return res.status(400).send('Original file is already smaller than target size.');
+  }
+
+  try {
+    // Read PDF into memory
+    const pdfBytes = fs.readFileSync(inputPath);
+    let pdfDoc = await PDFDocument.load(pdfBytes);
+    let currentSize = pdfBytes.length;
+    let quality = 80; // Start with high quality
+    const maxIterations = 5;
+    let iteration = 0;
+
+    // Iterative compression
+    while (currentSize > targetSizeBytes * 1.1 && iteration < maxIterations) {
+      const newPdfDoc = await PDFDocument.create();
+      const pages = pdfDoc.getPages();
+
+      for (const page of pages) {
+        const newPage = newPdfDoc.addPage([page.getWidth(), page.getHeight()]);
+        const images = page.node.getImages();
+
+        for (const [ref, img] of images) {
+          const imageData = img.getImage();
+          if (imageData && (imageData.Name === 'JPEG' || imageData.Name === 'JPG')) {
+            const buffer = await pdfDoc.context.lookup(imageData.ref);
+            const sharpImg = await sharp(buffer).jpeg({ quality }).toBuffer();
+            const embeddedImg = await newPdfDoc.embedJpg(sharpImg);
+            newPage.drawImage(embeddedImg, {
+              x: img.X,
+              y: img.Y,
+              width: img.Width,
+              height: img.Height,
+            });
+          } else {
+            // Copy non-image content (text, vectors)
+            newPage.node.setContentStreams(page.node.getContentStreams());
+          }
+        }
+
+        // Copy annotations, forms, etc.
+        newPage.node.setAnnotations(page.node.getAnnotations());
+      }
+
+      // Save and check size
+      pdfBytes = await newPdfDoc.save();
+      currentSize = pdfBytes.length;
+      pdfDoc = newPdfDoc;
+
+      // Reduce quality for next iteration
+      quality = Math.max(10, quality - 15);
+      iteration++;
+    }
+
+    // Save final PDF
+    fs.writeFileSync(outputPath, pdfBytes);
+    fs.unlinkSync(inputPath);
+
+    const finalSize = fs.statSync(outputPath).size;
+    const percent = Math.round((1 - finalSize / originalSize) * 100);
+
+    res.json({
+      downloadUrl: `https://file2do-backend-docker.onrender.com/compressed/${outputFilename}`,
+      originalSize,
+      finalSize,
+      compressionPercent: percent,
+      achievedTarget: finalSize <= targetSizeBytes * 1.1 && finalSize >= targetSizeBytes * 0.9,
+    });
+  } catch (err) {
+    console.error('Compression Error:', err);
+    fs.unlinkSync(inputPath);
+    if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+    res.status(500).send('PDF compression failed.');
+  }
+});
+
 app.post('/upload', upload.single('image'), async (req, res) => {
   const inputPath = req.file.path;
   const outputFilename = 'compressed_' + req.file.filename;
